@@ -28,36 +28,32 @@ std::string OperatingSystem();
 std::string Kernel();
 
 // CPU
-enum CPUStates {
-  kUser_ = 0,
-  kNice_,
-  kSystem_,
-  kIdle_,
-  kIOwait_,
-  kIRQ_,
-  kSoftIRQ_,
-  kSteal_,
-  kGuest_,
-  kGuestNice_
-};
-std::vector<std::string> CpuUtilization();
-float CpuUtilization(int pid);
+struct CPUStates {
+  long user;
+  long nice;
+  long system;
+  long idle;
+  long iowait;
+  long irq;
+  long softirq;
+  long steal;
+  long guest;
+  long guestnice;
 
-struct CpuKPI {
-  long idleTime;
-  long totalTime;
-};
+  long Active() { 
+    return user + nice + system + irq + softirq + steal;
+  }
 
-static std::vector<CpuKPI> previousVector;
-std::vector<CpuKPI> CpuUtilPercentage();
+  long Idle() {
+    return idle + iowait;
+  }
 
-struct CpuProcessInfo {
-  float totalTime;
-  float seconds;
+  long Total() {
+    return Active() + Idle();
+  }
 };
 
-CpuProcessInfo GetProcessCpuInfo(int pid);
-
+float CpuUtilization();
 long Jiffies();
 long ActiveJiffies();
 long ActiveJiffies(int pid);

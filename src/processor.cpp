@@ -4,5 +4,5 @@
 // Return the aggregate CPU utilization
 float Processor::Utilization() {
     //Get the firsrt value and convert from string to float using 'stof'
-    return std::stof(LinuxParser::CpuUtilization()[0]);
+    return LinuxParser::CpuUtilization();
 }

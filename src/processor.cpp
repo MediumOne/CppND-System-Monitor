@@ -1,4 +1,8 @@
 #include "processor.h"
+#include "linux_parser.h"
 
-// TODO: Return the aggregate CPU utilization
-float Processor::Utilization() { return 0.0; }
+// Return the aggregate CPU utilization
+float Processor::Utilization() {
+    //Get the firsrt value and convert from string to float using 'stof'
+    return std::stof(LinuxParser::CpuUtilization()[0]);
+}

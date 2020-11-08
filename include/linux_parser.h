@@ -41,6 +41,23 @@ enum CPUStates {
   kGuestNice_
 };
 std::vector<std::string> CpuUtilization();
+float CpuUtilization(int pid);
+
+struct CpuKPI {
+  long idleTime;
+  long totalTime;
+};
+
+static std::vector<CpuKPI> previousVector;
+std::vector<CpuKPI> CpuUtilPercentage();
+
+struct CpuProcessInfo {
+  float totalTime;
+  float seconds;
+};
+
+CpuProcessInfo GetProcessCpuInfo(int pid);
+
 long Jiffies();
 long ActiveJiffies();
 long ActiveJiffies(int pid);

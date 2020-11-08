@@ -12,7 +12,7 @@ using std::to_string;
 using std::vector;
 
 // Return this process's ID
-int Process::Pid() { return this->pid_; }
+int Process::Pid() const { return this->pid_; }
 
 void Process::setPid(int pid) {
     this->pid_ = pid;
@@ -45,7 +45,7 @@ string Process::User() {
 }
 
 // Return the age of this process (in seconds)
-long int Process::UpTime() { 
+long int Process::UpTime() const { 
     //Get the uptime for the current process.
     return LinuxParser::UpTime(Pid());
 }

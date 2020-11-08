@@ -177,32 +177,11 @@ long LinuxParser::Jiffies() {
       std::istringstream linestream(line);
       std::string cpu;
       CPUStates cpuStates{};
-      long totalUserTime, totalNiceTime, totalIdleTime, totalSystem, totalVirtualTime;
       linestream >> cpu >> cpuStates.user >> cpuStates.nice >> cpuStates.system >> cpuStates.idle >> cpuStates.iowait 
                         >> cpuStates.irq >> cpuStates.softirq >> cpuStates.steal >> cpuStates.guest >> cpuStates.guestnice;
       return cpuStates.Total();
   }
   return 0;
-}
-
-// Read and return the number of active jiffies for a PID
-long LinuxParser::ActiveJiffies(int pid) {
-  std::stringstream filename;
-  filename << kProcDirectory << "/" << pid << "/" << kStatFilename;
-  std::ifstream filestream(filename.str());
-  if (filestream.is_open()) {
-      std::string line;
-      std::getline(filestream, line);
-      std::istringstream linestream(line);
-      std::string ignore;
-      long utime, stime, cutime, cstime, starttime;
-      for(int i = 0; i < 13; i++) linestream >> ignore;
-      linestream >> utime >> stime >> cutime >> cstime ;
-      for(int i = 0; i < 4; i++) linestream >> ignore;
-      linestream >> starttime;
-      return utime + stime + cutime + cstime +starttime;
-  }
-  return 0; 
 }
 
 // Read and return the number of active jiffies for the system
@@ -215,7 +194,6 @@ std::ifstream filestream(kProcDirectory + kStatFilename);
       std::istringstream linestream(line);
       std::string cpu;
       CPUStates cpuStates{};
-      long totalUserTime, totalNiceTime, totalIdleTime, totalSystem, totalVirtualTime;
       linestream >> cpu >> cpuStates.user >> cpuStates.nice >> cpuStates.system >> cpuStates.idle >> cpuStates.iowait 
                         >> cpuStates.irq >> cpuStates.softirq >> cpuStates.steal >> cpuStates.guest >> cpuStates.guestnice;
       return cpuStates.Active();
@@ -238,6 +216,26 @@ float LinuxParser::CpuUtilization() {
  * PROCESS Level data methods
  * 
  */
+
+// Read and return the number of active jiffies for a PID
+long LinuxParser::ActiveJiffies(int pid) {
+  std::stringstream filename;
+  filename << kProcDirectory << "/" << pid << "/" << kStatFilename;
+  std::ifstream filestream(filename.str());
+  if (filestream.is_open()) {
+      std::string line;
+      std::getline(filestream, line);
+      std::istringstream linestream(line);
+      std::string ignore;
+      long utime, stime, cutime, cstime, starttime;
+      for(int i = 0; i < 13; i++) linestream >> ignore;
+      linestream >> utime >> stime >> cutime >> cstime ;
+      for(int i = 0; i < 4; i++) linestream >> ignore;
+      linestream >> starttime;
+      return utime + stime + cutime + cstime +starttime;
+  }
+  return 0; 
+}
 
 // TODO: Read and return the command associated with a process
 string LinuxParser::Command(int pid) {
@@ -322,7 +320,6 @@ long LinuxParser::UpTime(int pid) {
       itrealvalue;
   std::string line;
   long startTime = 0;
-  long totalTime;
 
   long clock = sysconf(_SC_CLK_TCK);
 

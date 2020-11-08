@@ -191,9 +191,80 @@ long LinuxParser::IdleJiffies() {
   return 0;
 }
 
+LinuxParser::CpuProcessInfo LinuxParser::GetProcessCpuInfo(int pid) {
+    std::stringstream filename;
+    filename << kProcDirectory << "/" << pid << "/" << kStatFilename;
+    std::ifstream filestream(filename.str());
+    LinuxParser::CpuProcessInfo returnInfo;
+    if (filestream.is_open()) {
+        std::string line;
+        std::getline(filestream, line);
+        std::istringstream linestream(line);
+        std::string ignore;
+        long utime;
+        long stime;
+        long cutime;
+        long cstime;
+        long starttime;
+        for(int i = 0; i < 13; i++) linestream >> ignore;
+        linestream >> utime >> stime >> cutime >> cstime ;
+        for(int i = 0; i < 4; i++) linestream >> ignore;
+        linestream >> starttime;
+        returnInfo.seconds = LinuxParser::UpTime() - (starttime/sysconf(_SC_CLK_TCK));
+        returnInfo.totalTime = (utime + stime + cutime + cstime)/sysconf(_SC_CLK_TCK);
+    }   
+    return returnInfo;
+  }
+
+  float LinuxParser::CpuUtilization(int pid)
+  {
+    //LinuxParser::CpuProcessInfo previous = LinuxParser::GetProcessCpuInfo(pid);
+    //sleep(1);
+    LinuxParser::CpuProcessInfo current = LinuxParser::GetProcessCpuInfo(pid);
+    long secondsd = current.seconds; // - previous.seconds;
+    long totald = current.totalTime;// - previous.totalTime;
+    return totald*1.0/secondsd;//secondsd;
+  }
+
+
+vector<LinuxParser::CpuKPI> LinuxParser::CpuUtilPercentage() {
+  std::ifstream filestream(kProcDirectory + kStatFilename);
+  vector<LinuxParser::CpuKPI> returnVector;
+  if (filestream.is_open()) {
+      std::string line;
+      while (std::getline(filestream, line)) {
+          std::istringstream linestream(line);
+          std::string cpu;
+          long user;
+          long nice;
+          long system;
+          long idle;
+          long iowait;
+          long irq;
+          long softirq;
+          long steal;
+          long guess;
+          long guessnice; 
+          linestream >> cpu >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal >> guess >> guessnice;
+          if (cpu.substr(0,3) != "cpu")
+              return returnVector;
+          
+          long totalIdleTime = idle + iowait;
+          long totalNoIdleTime = user + nice + system + irq + softirq;
+          
+          CpuKPI current;
+          current.idleTime = totalIdleTime;
+          current.totalTime = totalIdleTime + totalNoIdleTime;
+
+          returnVector.emplace_back(current);
+      }     
+      return returnVector;
+  }
+}
 // TODO: Read and return CPU utilization
-vector<string> LinuxParser::CpuUtilization() {
-   std::vector<LinuxParser::CpuKPI> previousVector = LinuxParser::CpuUtilPercentage(); 
+
+vector<string> LinuxParser::CpuUtilization() { 
+  std::vector<LinuxParser::CpuKPI> previousVector = LinuxParser::CpuUtilPercentage(); 
   sleep(1);
   std::vector<LinuxParser::CpuKPI> currentVector = LinuxParser::CpuUtilPercentage(); 
   vector<std::string> returnCpu;
@@ -205,16 +276,9 @@ vector<string> LinuxParser::CpuUtilization() {
       returnCpu.emplace_back(oCpuStream.str());
   }
   return returnCpu;
-}
+  }
 
-float LinuxParser::CpuUtilization(int pid) {
-  //LinuxParser::CpuProcessInfo previous = LinuxParser::GetProcessCpuInfo(pid);
-  //sleep(1);
-  LinuxParser::CpuProcessInfo current = LinuxParser::GetProcessCpuInfo(pid);
-  long secondsd = current.seconds; // - previous.seconds;
-  long totald = current.totalTime;// - previous.totalTime;
-  return totald*1.0/secondsd;//secondsd;
-}
+
 
 // TODO: Read and return the total number of processes
 int LinuxParser::TotalProcesses() {

@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "process.h"
 #include "linux_parser.h"
@@ -20,10 +21,25 @@ void Process::setPid(int pid) {
 
 // Return this process's CPU utilization
 float Process::CpuUtilization() const { 
-    float totaltime = LinuxParser::ActiveJiffies(Pid());  // In jiffies
-    float secondsactive = this->Process::UpTime();  // In seconds
-    long cpu_usage_ = (totaltime / sysconf(_SC_CLK_TCK)) / secondsactive;
-    return cpu_usage_;
+    float activeJiffies = LinuxParser::ActiveJiffies(Pid());  // In jiffies
+    float systemUptime = LinuxParser::UpTime();  // In seconds
+    float processStartTime = LinuxParser::StartTime(Pid()); // In jiffies
+
+    long jiffiesPerSec = sysconf(_SC_CLK_TCK);
+
+    float processActiveTime = activeJiffies / jiffiesPerSec;
+
+    float processStartTimeInSec = processStartTime / jiffiesPerSec;
+
+    float timeSinceProcessStart = systemUptime - processStartTimeInSec;
+
+    float cpuUsage = processActiveTime / timeSinceProcessStart;
+
+    // std::cout << "Process: " << Pid() << " : " << activeJiffies << " : " << jiffiesPerSec << " : " 
+    //           << processActiveTime << " : " << processStartTimeInSec << " : " << systemUptime << " : "
+    //           << timeSinceProcessStart << " : " << cpuUsage << "\n";
+
+    return cpuUsage;
 }
 
 // Return the command that generated this process
